@@ -17,3 +17,6 @@
 [submodule "lib/thirdweb-dev"]
 	path = lib/thirdweb-dev
 	url = https://github.com/thirdweb-dev/contracts.git
+[submodule "lib/OpenZeppelin-upgradeable"]
+	path = lib/OpenZeppelin-upgradeable
+	url = https://github.com/OpenZeppelin/openzeppelin-contracts-upgradeable

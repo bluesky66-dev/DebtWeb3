@@ -5,8 +5,8 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ERC20Burnable} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {DW3} from "./DW3.sol";
-import {SDW3} from "./SDW3.sol";
+import {DW3} from "./tokens/DW3.sol";
+import {SDW3} from "./tokens/SDW3.sol";
 import {Deconstructor} from "./Deconstructor.sol";
 
 library CoreComponents {
@@ -132,7 +132,7 @@ contract Core is Ownable {
     }
     
     function stakeInSWD3(uint256 _amount, uint8 _poolId) public {
-        dw3.safeTransferFrom(msg.sender, address(this), _amount);
+        dw3.transferFrom(msg.sender, address(this), _amount);
         SDW3Poolages[_poolId].PoolAmount += _amount;
         SDW3Pools[_poolId].PoolAmount += _amount;
         Users[msg.sender].dw3PoolStakes[_poolId] += _amount;
@@ -154,7 +154,7 @@ contract Core is Ownable {
 
         ProtocolTVL.UserTVL -= _amount;
 
-        dw3.safeTransfer(msg.sender, _amount);
+        dw3.transfer(msg.sender, _amount);
         emit WithdrawFromDW3(msg.sender, _amount);
     }
 
@@ -168,7 +168,7 @@ contract Core is Ownable {
         SDW3Poolages[_poolId].PoolAmount -= _amount;
         SDW3Pools[_poolId].PoolAmount -= _amount;
         Users[msg.sender].sdw3PoolStakes[_poolId] -= _amount;
-        sdw3.safeTransfer(msg.sender, _amount);
+        sdw3.transfer(msg.sender, _amount);
         emit WithdrawFromSWD3(msg.sender, _amount);
     }
 
@@ -197,7 +197,5 @@ contract Core is Ownable {
 
         emit SDW3PoolCreated(SDW3Pools.length -1, _poolAmnt, _rps, block.number, _totalRewards);
     }
-
-
 
 }

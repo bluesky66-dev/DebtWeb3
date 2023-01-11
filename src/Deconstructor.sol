@@ -7,5 +7,13 @@ pragma solidity ^0.8.0;
 /// @notice The Deconstructor contract manages the debt deconstruction process
 contract Deconstructor {
 
+    constructor() {
+    }
+
+    function deconstructDebt() public returns (bool) {
+
+    }
+
+
 
 }
