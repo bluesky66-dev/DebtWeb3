@@ -1,0 +1,19 @@
+[submodule "lib/openzeppelin-contracts"]
+	path = lib/openzeppelin-contracts
+	url = https://github.com/OpenZeppelin/openzeppelin-contracts.git
+
+[submodule "lib/solmate"]
+	path = lib/solmate
+	url = https://github.com/transmissions11/solmate.git
+[submodule "lib/foundry"]
+	path = lib/foundry
+	url = https://github.com/foundry-rs/foundry.git
+[submodule "lib/forge-std"]
+	path = lib/forge-std
+	url = https://github.com/foundry-rs/forge-std
+[submodule "lib/ds-test"]
+	path = lib/ds-test
+	url = https://github.com/dapphub/ds-test.git
+[submodule "lib/thirdweb-dev"]
+	path = lib/thirdweb-dev
+	url = https://github.com/thirdweb-dev/contracts.git

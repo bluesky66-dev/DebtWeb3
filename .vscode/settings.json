@@ -1,0 +1,4 @@
+{
+    "inline-bookmarks.view.showVisibleFilesOnly": true,
+    "inline-bookmarks.default.words.blue": "@audit\\-info[\\s], @todo[\\s], @note[\\s], @remind[\\s], @follow-up[\\s], @query[\\s]"
+}
