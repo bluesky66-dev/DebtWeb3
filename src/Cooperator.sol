@@ -1,116 +1,78 @@
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.9;
+// SPDX-License-Identifier: GPL-3.0
+pragma solidity ^0.8.0;
 
-import "@openzeppelin-upgrades/contracts/governance/GovernorUpgradeable.sol";
-import "@openzeppelin-upgrades/contracts/governance/extensions/GovernorSettingsUpgradeable.sol";
-import "@openzeppelin-upgrades/contracts/governance/extensions/GovernorCountingSimpleUpgradeable.sol";
-import "@openzeppelin-upgrades/contracts/governance/extensions/GovernorVotesUpgradeable.sol";
-import "@openzeppelin-upgrades/contracts/governance/extensions/GovernorVotesQuorumFractionUpgradeable.sol";
-import "@openzeppelin-upgrades/contracts/governance/extensions/GovernorTimelockControlUpgradeable.sol";
-import "@openzeppelin-upgrades/contracts/proxy/utils/Initializable.sol";
+import { ITreasury } from "./interfaces/ITreasury.sol";
+import { ICore } from "./interfaces/ICore.sol";
+import { IGovernor } from "@openzeppelin/contracts/governance/IGovernor.sol";
 
-contract DW3Governor is Initializable, GovernorUpgradeable, GovernorSettingsUpgradeable, GovernorCountingSimpleUpgradeable, GovernorVotesUpgradeable, GovernorVotesQuorumFractionUpgradeable, GovernorTimelockControlUpgradeable {
-    /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() {
-        _disableInitializers();
+/// @title Cooperator
+/// @author Keyrxng
+/// @notice A contract the organizes the protocol through authenticated access to the treasury and core contracts
+contract Cooperator {
+
+    ITreasury Treasury;
+    ICore Core;
+    IGovernor Governer;
+
+    constructor(
+        address _treasury,
+        address _core,
+        address _governor
+    ) {
+        Treasury = ITreasury(_treasury);
+        Core = ICore(_core);
+        Governer = IGovernor(_governor);
     }
 
-    function initialize(IVotesUpgradeable _token, TimelockControllerUpgradeable _timelock)
-        initializer public
-    {
-        __Governor_init("DW3Governor");
-        __GovernorSettings_init(1 /* 1 block */, 50400 /* 1 week */, 1e18);
-        __GovernorCountingSimple_init();
-        __GovernorVotes_init(_token);
-        __GovernorVotesQuorumFraction_init(4);
-        __GovernorTimelockControl_init(_timelock);
+    modifier authed() {
+        require(
+            msg.sender == address(Core)
+                || msg.sender == address(Governer)
+                || msg.sender == address(Treasury), "NotAuthed"
+        );
+        _;
     }
 
-    // The following functions are overrides required by Solidity.
 
-    function votingDelay()
-        public
-        view
-        override(IGovernorUpgradeable, GovernorSettingsUpgradeable)
-        returns (uint256)
-    {
-        return super.votingDelay();
+    function handleEth(address from, address payable to, uint256 amount) external payable authed {
+        if(from == address(Treasury)){
+            Treasury.releaseEth{value: amount}(to, amount);
+        }else if(to == address(Core)){
+            Core.receiveEth{value: amount}();
+        }else if(from == address(Governer)){
+            _;
+        }else{
+            Treasury.receiveEth{value: amount}();
+        }
+    }
+      
+      
+        // Treasury.depositEth{value: amount}();
+        // (bool success,) = to.call{value: amount}("");
+        // require(success, "EthTransferFailed");
     }
 
-    function votingPeriod()
-        public
-        view
-        override(IGovernorUpgradeable, GovernorSettingsUpgradeable)
-        returns (uint256)
-    {
-        return super.votingPeriod();
+    function depositSDW3(uint256 amount) external authed {
+
     }
 
-    function quorum(uint256 blockNumber)
-        public
-        view
-        override(IGovernorUpgradeable, GovernorVotesQuorumFractionUpgradeable)
-        returns (uint256)
-    {
-        return super.quorum(blockNumber);
+    function depositDW3(uint256 amount) external authed {
+
     }
 
-    function state(uint256 proposalId)
-        public
-        view
-        override(GovernorUpgradeable, GovernorTimelockControlUpgradeable)
-        returns (ProposalState)
-    {
-        return super.state(proposalId);
+    function releaseEth(address payable to, uint256 amount) external authed {
+
     }
 
-    function propose(address[] memory targets, uint256[] memory values, bytes[] memory calldatas, string memory description)
-        public
-        override(GovernorUpgradeable, IGovernorUpgradeable)
-        returns (uint256)
-    {
-        return super.propose(targets, values, calldatas, description);
+    function releaseToken(address token, address to, uint256 amount) external authed {
+
     }
 
-    function proposalThreshold()
-        public
-        view
-        override(GovernorUpgradeable, GovernorSettingsUpgradeable)
-        returns (uint256)
-    {
-        return super.proposalThreshold();
+    function receiveEth() external payable authed {
+
     }
 
-    function _execute(uint256 proposalId, address[] memory targets, uint256[] memory values, bytes[] memory calldatas, bytes32 descriptionHash)
-        internal
-        override(GovernorUpgradeable, GovernorTimelockControlUpgradeable)
-    {
-        super._execute(proposalId, targets, values, calldatas, descriptionHash);
-    }
+    function receiveToken(address token, uint256 amount) external authed{
 
-    function _cancel(address[] memory targets, uint256[] memory values, bytes[] memory calldatas, bytes32 descriptionHash)
-        internal
-        override(GovernorUpgradeable, GovernorTimelockControlUpgradeable)
-        returns (uint256)
-    {
-        return super._cancel(targets, values, calldatas, descriptionHash);
-    }
-
-    function _executor()
-        internal
-        view
-        override(GovernorUpgradeable, GovernorTimelockControlUpgradeable)
-        returns (address)
-    {
-        return super._executor();
-    }
-
-    function supportsInterface(bytes4 interfaceId)
-        public
-        view
-        override(GovernorUpgradeable, GovernorTimelockControlUpgradeable)
-        returns (bool)
-    {
-        return super.supportsInterface(interfaceId);
     }
 }

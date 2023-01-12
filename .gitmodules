@@ -20,3 +20,9 @@
 [submodule "lib/OpenZeppelin-upgradeable"]
 	path = lib/OpenZeppelin-upgradeable
 	url = https://github.com/OpenZeppelin/openzeppelin-contracts-upgradeable
+[submodule "lib/uniswapV2-periph"]
+	path = lib/uniswapV2-periph
+	url = https://github.com/Uniswap/v2-periphery
+[submodule "lib/uniswapV2-core"]
+	path = lib/uniswapV2-core
+	url = https://github.com/Uniswap/v2-core
