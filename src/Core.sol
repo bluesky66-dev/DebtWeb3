@@ -46,7 +46,7 @@ contract Core is ReentrancyGuard, AccessControl {
         coop = new Cooperator(address(this), 5 * 60 * 60);
         treasury = new Treasury(address(dw3), address(sdw3), address(this), address(coop));
         pools = new Pools(dw3, sdw3, address(treasury), address(coop));
-        
+
         coop.init(address(treasury), address(pools));
         dw3.init(address(this), address(coop), address(treasury));
         sdw3.init(address(this), address(coop), address(treasury));
@@ -62,12 +62,14 @@ contract Core is ReentrancyGuard, AccessControl {
         _;
     }
 
+
+
+
     function deadlockProtocol() external {
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender));
 
         pools.pauseProtocol();
         treasury.pauseProtocol();
-
 
         paused = true;
     }

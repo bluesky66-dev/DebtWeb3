@@ -41,13 +41,13 @@ library CoreComponents {
         Over100k
     }
     enum DebtType {
-        CreditCard,
-        StudentLoan,
-        AutoLoan,
-        Mortgage,
-        PersonalLoan,
-        BusinessLoan,
-        Other
+        CreditCard, // 0
+        StudentLoan, // 1
+        AutoLoan, // 2
+        Mortgage, // 3
+        PersonalLoan, // 4
+        BusinessLoan, // 5
+        Other // 6
     }
 
     struct ProtocolTVL {
@@ -97,12 +97,6 @@ library CoreComponents {
     struct User {
         mapping(uint256 => uint256) dw3PoolStakes; // user pool stakes
         mapping(uint256 => uint256) sdw3PoolStakes; // user pool stakes
-        uint256 UserDW3PoolAmount; // user liquid debt pool amount
-        uint256 UserDW3PoolRewardsPerSharePaid; // user liquid debt pool rewards per share paid
-        uint256 UserDW3PoolLastRewardBlock; // user liquid debt pool last reward block
-        uint256 UserSWD3PoolAmount; // user SDW3 pool amount
-        uint256 UserSWD3PoolRewardsPerSharePaid; // user SDW3 pool rewards per share paid
-        uint256 UserSWD3PoolLastRewardBlock; // user SDW3 pool last reward block
         UserDebtPortfolio UserDebtPortfolio; // user debt portfolio
     }
 

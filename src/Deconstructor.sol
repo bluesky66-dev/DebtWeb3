@@ -9,7 +9,4 @@ contract Deconstructor {
 
     constructor() {
     }
-
-
-
 }

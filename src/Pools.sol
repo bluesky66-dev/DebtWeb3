@@ -31,9 +31,8 @@ contract Pools is ReentrancyGuard, AccessControl {
     DW3 private dw3;
     SDW3 private sdw3;
 
-
-    address  private Treasury;
-    address  private Coop;
+    address private Treasury;
+    address private Coop;
     
     bytes32 public constant CORE_ROLE = keccak256("CORE_ROLE");
     bytes32 public constant COOP_ROLE = keccak256("COOP_ROLE");
