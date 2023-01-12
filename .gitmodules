@@ -26,3 +26,6 @@
 [submodule "lib/uniswapV2-core"]
 	path = lib/uniswapV2-core
 	url = https://github.com/Uniswap/v2-core
+[submodule "lib/@chainlink"]
+	path = lib/@chainlink
+	url = https://github.com/smartcontractkit/chainlink-brownie-contracts.git

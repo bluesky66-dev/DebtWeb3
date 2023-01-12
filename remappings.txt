@@ -3,3 +3,6 @@ forge-std/=lib/forge-stddd/src/
 @openzeppelin/=lib/openzeppelin-contracts/
 solmate/=lib/solmate/src
 @openzeppelin-upgrades/=lib/OpenZeppelin-upgradeable/
+@chainlink/=lib/@chainlink/
+@uniswapPeri/=lib/uniswapV2-periph/
+@uniswapCore/=lib/uniswapV2-core/
