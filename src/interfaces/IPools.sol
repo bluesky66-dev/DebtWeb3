@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.0;
 
-/// @title ICore
+/// @title IPools
 /// @author Keyrxng
 /// @notice The Core Interface
-interface ICore {
+interface IPools {
     function addPaymentToken(address _token) external;
+    function removePaymentToken(address _token) external;
 
     function calcShares(
         uint256 _amount,
@@ -45,6 +46,5 @@ interface ICore {
 
     function withdrawFromSWD3(uint256 _amount, uint8 _poolId) external;
 
-    function deadlockProtocol() external;
-
+    function pauseProtocol() external;
 }

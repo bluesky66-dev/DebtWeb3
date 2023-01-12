@@ -3,7 +3,8 @@ pragma solidity ^0.8.0;
 
 import {ITreasury} from "./interfaces/ITreasury.sol";
 import {ICore} from "./interfaces/ICore.sol";
-import {IGovernor} from "@openzeppelin/contracts/governance/IGovernor.sol";
+import {IPools} from "./interfaces/IPools.sol";
+
 import {KeeperCompatibleInterface} from "@chainlink/contracts/src/v0.8/interfaces/KeeperCompatibleInterface.sol";
 
 /// @title Cooperator
@@ -16,28 +17,29 @@ contract Cooperator is KeeperCompatibleInterface {
 
     ITreasury Treasury;
     ICore Core;
-    IGovernor Governor;
+    IPools Pools; 
     address keeper;
     address owner = msg.sender;
 
     constructor(
-        address _treasury,
         address _core,
-        address _governor,
         uint256 updateInterval
     ) {
-        Treasury = ITreasury(_treasury);
         Core = ICore(_core);
-        Governor = IGovernor(_governor);
         interval = updateInterval;
         lastTimeStamp = block.timestamp;
         queueInterval = 86000; // broadcast can be made 24 hours in advance. 1.01 day after being broadcast the item will be approved for execution
     }
 
+    function init(address _treasury, address _pool) external {
+        require(msg.sender == owner, "NotAuthed");
+        Treasury = ITreasury(_treasury);
+        Pools = IPools(_pool);
+    }
+
     modifier authed() {
         require(
             msg.sender == address(Core) ||
-                msg.sender == address(Governor) ||
                 msg.sender == address(Treasury) ||
                 msg.sender == keeper ||
                 msg.sender == owner,
@@ -68,12 +70,20 @@ contract Cooperator is KeeperCompatibleInterface {
 
     event QueueItemExecuted(bool success, bytes returnData);
 
+    function addPaymentToken(address _token) external authed {
+        Pools.addPaymentToken(_token);
+    }
+
+    function removePaymentToken(address _token) external authed {
+        Pools.removePaymentToken(_token);
+    }
+
     function handleEth(
         address from,
-        address payable to,
+        address payable to
     ) external payable authed {
         if (msg.sender == address(Treasury)) {
-            Treasury.releaseEth{value: msg.value}(to, amount);
+            Treasury.releaseEth{value: msg.value}(to, msg.value);
         } else if (to == address(Treasury)) {
             Treasury.depositEth{value: msg.value}();
         } else if (from == address(Treasury)) {
@@ -81,12 +91,12 @@ contract Cooperator is KeeperCompatibleInterface {
                 target: to,
                 value: msg.value,
                 timestamp: block.timestamp,
-                payload: abi.encodeWithSelector(ITreasury.releaseEth.selector,to, amount),
+                payload: abi.encodeWithSelector(ITreasury.releaseEth.selector,to, msg.value),
                 state: opState.Pending
             });
             queueItems.push(tempItem);
         } else {
-            Treasury.depositEth{value: amount}();
+            Treasury.depositEth{value: msg.value}();
         }
     }
 
@@ -180,7 +190,7 @@ contract Cooperator is KeeperCompatibleInterface {
         queueItems.pop();
     }
 
-    function updateKeeper(address _keeper) external view authed {
+    function updateKeeper(address _keeper) external authed {
         keeper = _keeper;
     }
 

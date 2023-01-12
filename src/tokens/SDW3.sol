@@ -12,8 +12,17 @@ import "@openzeppelin-upgrades/contracts/proxy/utils/Initializable.sol";
 /// @custom:security-contact keyrxng@proton.me
 contract SDW3 is Initializable, ERC20Upgradeable, ERC20BurnableUpgradeable, PausableUpgradeable, OwnableUpgradeable, ERC20PermitUpgradeable, ERC20VotesUpgradeable {
     /// @custom:oz-upgrades-unsafe-allow constructor
+
+    address treasury;
+    address coop;
+    address core;
     constructor() {
         _disableInitializers();
+    }
+
+    modifier authed() {
+        require(msg.sender == core || msg.sender == coop || msg.sender == treasury, "DW3: only coop, core or treasury");
+        _;
     }
 
     function initialize() initializer public {
@@ -27,15 +36,26 @@ contract SDW3 is Initializable, ERC20Upgradeable, ERC20BurnableUpgradeable, Paus
         _mint(msg.sender, 10000000 * 10 ** decimals());
     }
 
-    function pause() public onlyOwner {
-        _pause();
+    
+
+    function init(address _core, address _coop, address _treasury) public onlyOwner {
+        require(_core != address(0), "SDW3: invalid core address");
+        require(_coop != address(0), "SDW3: invalid coop address");
+        require(_treasury != address(0), "SDW3: invalid treasury address");
+        treasury = _treasury;
+        coop = _coop;
+        core = _core;
     }
 
-    function unpause() public onlyOwner {
-        _unpause();
+    function pause() public authed {
+        if(!paused()) {
+            _pause();
+        }else{
+            _unpause();
+        }
     }
 
-    function mint(address to, uint256 amount) public onlyOwner {
+    function mint(address to, uint256 amount) public authed {
         _mint(to, amount);
     }
 

@@ -10,10 +10,6 @@ contract Deconstructor {
     constructor() {
     }
 
-    function deconstructDebt() public returns (bool) {
-
-    }
-
 
 
 }

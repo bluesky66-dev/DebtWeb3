@@ -16,6 +16,15 @@ contract DW3 is Initializable, ERC20Upgradeable, ERC20BurnableUpgradeable, Pausa
         _disableInitializers();
     }
 
+    address core;
+    address coop;
+    address treasury;
+
+    modifier authed() {
+        require(msg.sender == core || msg.sender == coop || msg.sender == treasury, "DW3: only coop, core or treasury");
+        _;
+    }
+
     function initialize() initializer public {
         __ERC20_init("DebtWebFree", "DW3");
         __ERC20Burnable_init();
@@ -27,6 +36,15 @@ contract DW3 is Initializable, ERC20Upgradeable, ERC20BurnableUpgradeable, Pausa
         _mint(msg.sender, 100000000 * 10 ** decimals());
     }
 
+    function init(address _core, address _coop, address _treasury) public onlyOwner {
+        require(_core != address(0), "DW3: invalid core address");
+        require(_coop != address(0), "DW3: invalid coop address");
+        require(_treasury != address(0), "DW3: invalid treasury address");
+        core = _core;
+        coop = _coop;
+        treasury = _treasury;
+    }
+
     function pause() public onlyOwner {
         _pause();
     }
@@ -35,7 +53,7 @@ contract DW3 is Initializable, ERC20Upgradeable, ERC20BurnableUpgradeable, Pausa
         _unpause();
     }
 
-    function mint(address to, uint256 amount) public onlyOwner {
+    function mint(address to, uint256 amount) public authed {
         _mint(to, amount);
     }
 

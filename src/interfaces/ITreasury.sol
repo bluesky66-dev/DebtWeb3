@@ -36,4 +36,5 @@ interface ITreasury {
     function getDW3TotalSupply() external view returns (uint256);
 
     function getSDW3TotalSupply() external view returns (uint256);
+    function pauseProtocol() external;
 }
