@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.0;
 
-import { ITreasury } from "./interfaces/ITreasury.sol";
-import { ICore } from "./interfaces/ICore.sol";
-import { IGovernor } from "@openzeppelin/contracts/governance/IGovernor.sol";
+import {ITreasury} from "./interfaces/ITreasury.sol";
+import {ICore} from "./interfaces/ICore.sol";
+import {IGovernor} from "@openzeppelin/contracts/governance/IGovernor.sol";
 import {KeeperCompatibleInterface} from "@chainlink/contracts/src/v0.8/interfaces/KeeperCompatibleInterface.sol";
 
 /// @title Cooperator
@@ -12,11 +12,13 @@ import {KeeperCompatibleInterface} from "@chainlink/contracts/src/v0.8/interface
 contract Cooperator is KeeperCompatibleInterface {
     uint256 private immutable interval;
     uint256 private lastTimeStamp;
+    uint256 private immutable queueInterval;
 
     ITreasury Treasury;
     ICore Core;
     IGovernor Governor;
     address keeper;
+    address owner = msg.sender;
 
     constructor(
         address _treasury,
@@ -29,14 +31,17 @@ contract Cooperator is KeeperCompatibleInterface {
         Governor = IGovernor(_governor);
         interval = updateInterval;
         lastTimeStamp = block.timestamp;
+        queueInterval = 86000; // broadcast can be made 24 hours in advance. 1.01 day after being broadcast the item will be approved for execution
     }
 
     modifier authed() {
         require(
-            msg.sender == address(Core)
-                || msg.sender == address(Governor)
-                || msg.sender == address(Treasury)
-                || msg.sender == keeper, "NotAuthed"
+            msg.sender == address(Core) ||
+                msg.sender == address(Governor) ||
+                msg.sender == address(Treasury) ||
+                msg.sender == keeper ||
+                msg.sender == owner,
+            "NotAuthed"
         );
         _;
     }
@@ -46,68 +51,137 @@ contract Cooperator is KeeperCompatibleInterface {
         uint256 value;
         uint256 timestamp;
         bytes payload;
-        
+        opState state;
     }
 
-    queueItem[] queueItems;
-    queueItem[] completedItems;
+    queueItem[] public queueItems;
+    queueItem[] public completedItems;
 
-    enum opState {Pending,Approved,Complete,Rejected}
-
+    enum opState {
+        Pending,
+        Approved,
+        Complete,
+        Rejected
+    }
 
     mapping(uint256 => queueItem) private queue; // queue of tasks to be perfromed on core contracts
-    mapping(uint256 => opState) private queueState; // 0: approved and pending, 1: complete, 2: rejected
 
     event QueueItemExecuted(bool success, bytes returnData);
 
-    function handleEth(address from, address payable to, uint256 amount) external payable authed {
-        if(msg.sender == address(Treasury)){
-            Treasury.releaseEth{value: amount}(to, amount);
-        }else if(to == address(Treasury)){
-            Treasury.depositEth{value: amount}();
-        }else if(from == address(Treasury)){
+    function handleEth(
+        address from,
+        address payable to,
+    ) external payable authed {
+        if (msg.sender == address(Treasury)) {
+            Treasury.releaseEth{value: msg.value}(to, amount);
+        } else if (to == address(Treasury)) {
+            Treasury.depositEth{value: msg.value}();
+        } else if (from == address(Treasury)) {
             queueItem memory tempItem = queueItem({
                 target: to,
-                value: amount,
+                value: msg.value,
                 timestamp: block.timestamp,
-                payload: abi.encodeWithSelector(ITreasury.depositEth.selector)
+                payload: abi.encodeWithSelector(ITreasury.releaseEth.selector,to, amount),
+                state: opState.Pending
             });
             queueItems.push(tempItem);
-        }else{
+        } else {
             Treasury.depositEth{value: amount}();
         }
     }
 
-    function _executeQueueItem() internal returns(bytes memory) {
+    function handleTokens(
+        address _token,
+        address _from,
+        address _to,
+        uint256 _amount
+    ) external payable authed {
+        if (msg.sender == address(Treasury)) {
+            Treasury.releaseToken(_to, _token, _amount);
+        } else if(_to == address(Treasury)) {
+            Treasury.depositToken(_token, _amount);
+        } else if(_from == address(Treasury)) {
+            queueItem memory tempItem = queueItem({
+                target: _to,
+                value: _amount,
+                timestamp: block.timestamp,
+                payload: abi.encodeWithSelector(
+                    ITreasury.releaseToken.selector,
+                    _to,
+                    _token,
+                    _amount
+                ),
+                state: opState.Pending
+            });
+            queueItems.push(tempItem);
+        }
+    }
+
+    function _executeQueueItem() internal returns (bytes memory) {
         require(queueItems.length > 0, "Nothing in queue");
         queueItem memory item = queueItems[0];
-        require(queueState[0] == opState.Approved, "Tx not approved");
+        if(item.state != opState.Approved) {
+            if(item.timestamp + queueInterval < block.timestamp) {
+                approveQueueItem(0);
+            } else {
+                revert("Item is not approved");
+            }
+        }
+
+        (bool ok, bytes memory mssg) = address(Treasury).call{value: item.value}(
+            item.payload
+        );
+        require(ok, "Tx Failed");
+
         completedItems.push(item);
         delete queueItems[0];
-        delete queueState[0];
-        (bool ok ,bytes memory mssg ) = item.target.call{value: item.value}(item.payload);
-        require(ok, "Tx Failed");
+
         return (mssg);
     }
 
-    function loadQueueItem(uint256 id) external view authed returns(queueItem memory){
+    function loadQueueItem(uint256 id)
+        external
+        view
+        authed
+        returns (queueItem memory)
+    {
         queueItem memory _queueItem = queueItems[id];
         return (_queueItem);
     }
 
-    function approveQueueItem(uint id) external authed {
-        queueItem memory item = queueItems[id];
-        queueState[id] = opState.Approved;
+    function approveQueueItem(uint256 id) public authed {
+        queueItem storage item = queueItems[id];
+        require(
+            item.state != opState.Approved || item.state != opState.Complete || item.state != opState.Rejected,
+            "Item already approved"
+        );
+        item.state = opState.Approved;
     }
 
-    function rejectQueueItem(uint id) external authed {
-        require(queueState[id] != opState.Rejected, "Item already rejected");
-        queueState[id] = opState.Rejected;
+    function rejectQueueItem(uint256 id) external authed {
+        queueItem storage item = queueItems[id];
+        require(
+            item.state != opState.Rejected || item.state != opState.Complete,
+            "Item already rejected"
+        );
+        item.state = opState.Rejected;
     }
 
+    function removeQueueItem(uint256 id) external authed {
+        queueItem storage item = queueItems[id];
+        require(item.state == opState.Rejected || item.state == opState.Complete, "Item Rejected or Completed");
+        uint len = queueItems.length;
+        // Move the current item to the end of the array and then pop it off.
+        if (id != len - 1) {
+            for (uint i = id; i < len-1; i++){
+                queueItems[i] = queueItems[i+1];
+            }
+        }
+        queueItems.pop();
+    }
 
-    function updateKeeper(address keeper) external view authed {
-        keeper = keeper;
+    function updateKeeper(address _keeper) external view authed {
+        keeper = _keeper;
     }
 
     function checkUpkeep(
@@ -115,50 +189,44 @@ contract Cooperator is KeeperCompatibleInterface {
     )
         public
         view
-        virtual
+        override
         returns (bool upkeepNeeded, bytes memory performData)
     {
         queueItems.length > 0;
-        uint time = queueItems[0].timestamp;
+        uint256 time = queueItems[0].timestamp;
         upkeepNeeded = block.timestamp >= time;
         performData = bytes("");
-
     }
 
     function performUpkeep(
         bytes calldata /* performData */
-    ) external virtual {
-        // add some verification
+    ) external override {
         (bool upkeepNeeded, ) = checkUpkeep("");
         require(upkeepNeeded, "Time interval not met");
 
         lastTimeStamp = block.timestamp;
         bytes memory ret = _executeQueueItem();
-        queueItems.pop();
-        emit QueueItemExecuted(true, ret);      
+        emit QueueItemExecuted(true, ret);
     }
 
-    function depositSDW3(uint256 amount) external authed {
-
+    function receiveEth() internal {
+        payable(address(this)).transfer(msg.value);
     }
 
-    function depositDW3(uint256 amount) external authed {
-
+    function receiveToken(address token, uint256 amount) external authed {
+        require(
+            token != address(0) && amount > 0,
+            "receiveToken: Can not recieve native asset"
+        );
+        Treasury.depositToken(token, amount);
     }
 
-    function releaseEth(address payable to, uint256 amount) external authed {
-
+    receive() external payable {
+        receiveEth();
     }
 
-    function releaseToken(address token, address to, uint256 amount) external authed {
-
+    fallback() external payable {
+        receiveEth();
     }
 
-    function receiveEth() external payable authed {
-
-    }
-
-    function receiveToken(address token, uint256 amount) external authed{
-
-    }
 }
