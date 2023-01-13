@@ -6,12 +6,12 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import {DW3} from "./tokens/DW3.sol";
-import {SDW3} from "./tokens/SDW3.sol";
+import {DW3} from "../tokens/DW3.sol";
+import {SDW3} from "../tokens/SDW3.sol";
 
-import {CoreComponents} from "./lib/CoreComponents.sol";
-import {Events} from "./lib/Events.sol";
-import {Errors} from "./lib/Errors.sol";
+import {CoreComponents} from "../lib/CoreComponents.sol";
+import {Events} from "../lib/Events.sol";
+import {Errors} from "../lib/Errors.sol";
 
 /// @title Pools
 /// @author Keyrxng
@@ -54,9 +54,9 @@ contract Pools is ReentrancyGuard, AccessControl {
         _;
     }
 
-    constructor(DW3 _dw3, SDW3 _sdw3, address _treasury, address _coop) {
-        dw3 = _dw3;
-        sdw3 = _sdw3;
+    constructor(address _dw3, address _sdw3, address _treasury, address _coop) {
+        dw3 = DW3(_dw3);
+        sdw3 = SDW3(_sdw3);
         Coop = _coop;
 
         Treasury = _treasury;
@@ -93,7 +93,7 @@ contract Pools is ReentrancyGuard, AccessControl {
         uint256 _totalShares,
         uint256 _totalRewards,
         uint256 _rps
-    ) public  {
+    ) public {
         address[] memory staker = new address[](0);
         staker[0] = Treasury;
         CoreComponents.DW3Pool memory pool = CoreComponents.DW3Pool(
@@ -114,7 +114,7 @@ contract Pools is ReentrancyGuard, AccessControl {
         uint256 _totalShares,
         uint256 _totalRewards,
         uint256 _rps
-    ) public  {
+    ) public {
         address[] memory staker = new address[](0);
         staker[0] = Treasury;
         CoreComponents.SDW3Pool memory pool = CoreComponents.SDW3Pool(

@@ -23,6 +23,7 @@ library Events {
     event ReleasedEth(address indexed to, uint256 indexed amount);
 
     event ReceivedEth(address indexed from, uint256 indexed amount);
+    event TokenisedLOD(address indexed from, uint256 indexed id, uint256 debtDuration, uint256 indexed amount);
 
     event Paused();
 
@@ -36,8 +37,8 @@ library Events {
 
     event ReceiveEther(
         address indexed sender,
-        uint256 amount,
-        uint256 timestamp
+        uint256 indexed amount,
+        uint256 indexed timestamp
     );
 
     event ReleasedToken(

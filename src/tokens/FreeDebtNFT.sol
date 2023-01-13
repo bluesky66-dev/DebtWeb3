@@ -12,13 +12,13 @@ import "@openzeppelin-upgrades/contracts/token/ERC721/extensions/draft-ERC721Vot
 import "@openzeppelin-upgrades/contracts/proxy/utils/Initializable.sol";
 import "@openzeppelin-upgrades/contracts/utils/CountersUpgradeable.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
-import {CoreComponents} from "../CoreComponents.sol";
+import {CoreComponents} from "../lib/CoreComponents.sol";
 
 /// @custom:security-contact Keyrxng@proton.me
 contract FreeDebtNFT is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeable, ERC721URIStorageUpgradeable, PausableUpgradeable, OwnableUpgradeable, ERC721BurnableUpgradeable, EIP712Upgradeable, ERC721VotesUpgradeable {
     using CountersUpgradeable for CountersUpgradeable.Counter;
     using Strings for uint256;
-    using String for uint8;
+    using Strings for uint8;
 
     CountersUpgradeable.Counter private _tokenIdCounter;
 
@@ -38,6 +38,10 @@ contract FreeDebtNFT is Initializable, ERC721Upgradeable, ERC721EnumerableUpgrad
         __ERC721Votes_init();
     }
 
+    function getNextId() public view returns (uint256) {
+        return _tokenIdCounter.current();
+    }
+
     function _baseURI() internal pure override returns (string memory) {
         return "ipfs://testtesttesttest";
     }
@@ -50,13 +54,7 @@ contract FreeDebtNFT is Initializable, ERC721Upgradeable, ERC721EnumerableUpgrad
         _unpause();
     }
 
-    function _baseURI() internal pure virtual override returns (string memory) {
-        return _baseTokenURI();
-    }
-
-    function 
-
-    function safeMint(address to, string memory uri, CoreComponents.LineOfDebt _lod) public onlyOwner {
+    function safeMint(address to, string memory uri, CoreComponents.LineOfDebt memory _lod) public onlyOwner {
         uint256 tokenId = _tokenIdCounter.current();
         _tokenIdCounter.increment();
         _safeMint(to, tokenId);
@@ -93,21 +91,6 @@ contract FreeDebtNFT is Initializable, ERC721Upgradeable, ERC721EnumerableUpgrad
         override(ERC721Upgradeable, ERC721URIStorageUpgradeable)
         returns (string memory)
     {
-        bytes memory dataURI = abi.encodePacked(
-            "data:application/json,", '{'
-            '"name": "Token Name",'
-            '"description": "Token Description",'
-            '"image": "testtesttest",'
-            '"attributes": ['
-                '{"trait_type": "Strength", "value": 10},'
-                '{"trait_type": "Defense", "value": 20},'
-                '{"trait_type": "Level", "value": 3000}'
-            ']}'
-        );
-        string memory uri = string(dataURI);
-        return uri;
-
-
         return super.tokenURI(tokenId);
     }
 

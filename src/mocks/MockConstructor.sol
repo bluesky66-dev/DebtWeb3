@@ -1,11 +1,11 @@
-// SPDX-License-Identifier: GPL-3.0
+// // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.0;
 
-import {FreeDebtNFT} from "./tokens/FreeDebtNFT.sol";
+import {FreeDebtNFT} from "../tokens/FreeDebtNFT.sol";
 
-import {CoreComponents} from "./lib/CoreComponents.sol";
-import {Events} from "./lib/Events.sol";
-import {Errors} from "./lib/Errors.sol";
+import {CoreComponents} from "../lib/CoreComponents.sol";
+import {Events} from "../lib/Events.sol";
+import {Errors} from "../lib/Errors.sol";
 
 contract Constructor {
 

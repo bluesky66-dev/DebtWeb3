@@ -6,17 +6,17 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import {DW3} from "./tokens/DW3.sol";
-import {SDW3} from "./tokens/SDW3.sol";
-import {FreeDebtNFT} from "./tokens/FreeDebtNFT.sol";
-import {Pools} from "./Pools.sol";
-import {Treasury} from "./Treasury.sol";
-import {Cooperator} from "./Cooperator.sol";
-import {Constructor} from "./Constructor.sol";
+import {DW3} from "./MockDW3.sol";
+import {SDW3} from "./MockSDW3.sol";
+import {FreeDebtNFT} from "./MockFreeDebtNFT.sol";
+import {Pools} from "./MockPools.sol";
+import {Treasury} from "./MockTreasury.sol";
+import {Cooperator} from "./MockCooperator.sol";
+import {Constructor} from "./MockConstructor.sol";
 
-import {CoreComponents} from "./lib/CoreComponents.sol";
-import {Events} from "./lib/Events.sol";
-import {Errors} from "./lib/Errors.sol";
+import {CoreComponents} from "../lib/CoreComponents.sol";
+import {Events} from "../lib/Events.sol";
+import {Errors} from "../lib/Errors.sol";
 
 /// @title Core
 /// @author Keyrxng
@@ -50,13 +50,13 @@ contract Core is ReentrancyGuard, AccessControl {
 
         coop = new Cooperator(address(this), 5 * 60 * 60);
         treasury = new Treasury(address(dw3), address(sdw3), address(this), address(coop));
-        pools = new Pools(dw3, sdw3, address(treasury), address(coop));
+        pools = new Pools(address(dw3), address(sdw3), address(treasury), address(coop));
         cons = new Constructor(address(dw3), address(sdw3), address(this), address(treasury));
         
         coop.init(address(treasury), address(pools));
-        fdnft.initialize();
-        dw3.initialize();
-        sdw3.initialize();
+        sdw3.init(address(this), address(treasury), address(pools));
+        dw3.init(address(this), address(treasury), address(pools));
+        fdnft.init(address(this), address(treasury), address(pools));
 
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _setupRole(COOP_ROLE, address(coop));
