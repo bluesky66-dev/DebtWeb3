@@ -4,16 +4,16 @@ pragma solidity ^0.8.0;
 import {Test} from "forge-std/Test.sol";
 import {console} from "forge-std/console.sol";
 
-import {Treasury} from "../src/Treasury.sol";
-import {Pools} from "../src/Pools.sol";
-import {Core} from "../src/Core.sol";
-import {Cooperator} from "../src/Cooperator.sol";
-import {Constructor} from "../src/Constructor.sol";
-import {Deconstructor} from "../src/Deconstructor.sol";
+import {Treasury} from "../src/mocks/MockTreasury.sol";
+import {Pools} from "../src/mocks/MockPools.sol";
+import {Core} from "../src/mocks/MockCore.sol";
+import {Cooperator} from "../src/mocks/MockCooperator.sol";
+import {Constructor} from "../src/mocks/MockConstructor.sol";
+import {Deconstructor} from "../src/mocks/MockDeconstructor.sol";
 
-import {FreeDebtNFT} from "../src/tokens/FreeDebtNFT.sol";
-import {DW3} from "../src/tokens/DW3.sol";
-import {SDW3} from "../src/tokens/SDW3.sol";
+import {FreeDebtNFT} from "../src/mocks/MockFreeDebtNFT.sol";
+import {DW3} from "../src/mocks/MockDW3.sol";
+import {SDW3} from "../src/mocks/MockSDW3.sol";
 
 import {SetUp} from "./utils/SetUp.sol";
 
@@ -102,7 +102,6 @@ contract TreasuryTest is SetUp {
         assertEq(treasury.balances(address(sdw3)), 500 ether);
     }
 
-    /// impersonating the cooperator contract calling the treasury contract directly
     function test_releaseEth() public {
         vm.deal(address(this), 100 ether);
         treasury.depositEth{value: 3 ether}();
@@ -113,7 +112,6 @@ contract TreasuryTest is SetUp {
         assertEq(ethBal, 2 ether);
     }
 
-    // impersonating the treasury contract calling the coop contract directly
     function test_releaseEth2() public {
         vm.deal(address(this), 100 ether);
         treasury.depositEth{value: 3 ether}();
@@ -124,7 +122,6 @@ contract TreasuryTest is SetUp {
         assertEq(ethBal, 1 ether);
     }
 
-    // impersonating the treasury contract calling the coop contract directly
     function test_releaseEth3() public {
         vm.deal(address(this), 100 ether);
         treasury.depositEth{value: 3 ether}();
@@ -135,29 +132,26 @@ contract TreasuryTest is SetUp {
         assertEq(ethBal, 1 ether);
     }
 
-    function test_releaseEth4() public {
-        vm.deal(address(this), 100 ether);
-        treasury.depositEth{value: 3 ether}();
-        vm.warp(1);
-        vm.prank(address(coop));
-        coop.handleEth{value: 1 ether}(payable(treasury), payable(address(coop)));
-        uint ethBal = address(treasury).balance;
-        assertEq(ethBal, 2 ether);
-    }
-
-    function test_releaseEth5() public {
-        vm.deal(address(this), 100 ether);
-        treasury.depositEth{value: 3 ether}();
-        vm.warp(1);
-        vm.prank(address(treasury));
-        treasury.releaseEth(payable(address(coop)), 1 );
-        uint ethBal = address(treasury).balance;
-        assertEq(ethBal, 2 ether);
-    }
-
-
-    // Remaning as this contract calling the coop contract directly which shouldn't transfer because it's not authed
     function testRevert_releaseEth() public {
+        vm.deal(address(this), 100 ether);
+        treasury.depositEth{value: 3 ether}();
+        vm.warp(1);
+        vm.startPrank(address(coop));
+        vm.expectRevert();
+        coop.handleEth{value: 1 ether}(payable(treasury), payable(address(coop)));
+    }
+
+    function testRevert_releaseEth2() public {
+        vm.deal(address(this), 100 ether);
+        treasury.depositEth{value: 3 ether}();
+        vm.warp(1);
+        vm.startPrank(address(treasury));
+        vm.expectRevert();
+        treasury.releaseEth(payable(address(coop)), 1 );
+    }
+
+
+    function testRevert_releaseEth3() public {
         vm.deal(address(this), 100 ether);
         treasury.depositEth{value: 3 ether}();
         vm.warp(1);
